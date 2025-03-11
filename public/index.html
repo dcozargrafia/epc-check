@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta EPC</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; }
+    input, button { width: 100%; padding: 10px; margin: 5px 0; }
+    button { background-color: blue; color: white; border: none; cursor: pointer; }
+    .resultado { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h3>Consulta EPC</h3>
+
+  <input type="text" id="epc" placeholder="Ingrese EPC" maxlength="20" autocomplete="off">
+  <button onclick="consultarEPC()">Consultar</button>
+  <div class="resultado" id="resultado"></div>
+
+  <script>
+
+    const API_URL = window.location.origin + "/calcular";
+
+    document.getElementById("epc").addEventListener("input", function () {
+      const epc = this.value.toUpperCase();
+      const hexRegex = /^[0-9A-F]{20}$/; 
+
+      if (hexRegex.test(epc)) {
+        consultarEPC();
+      }
+    });
+
+    async function consultarEPC() {
+      const epcInput = document.getElementById("epc");
+      const epc = epcInput.value.toUpperCase();
+
+      if (!epc.trim()) {
+        alert("Por favor, ingrese un EPC");
+        epcInput.focus();
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ epc })
+        });
+
+        const datos = await response.json();
+        mostrarResultado(datos);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    function mostrarResultado(datos) {
+      let div = document.getElementById("resultado");
+      const epcInput = document.getElementById("epc");
+
+      if (datos.error) {
+        div.innerHTML = `<p style='color:red;'>${datos.error}</p>`;
+      } else {
+        div.innerHTML = `
+          <p><strong>EPC:</strong> ${datos.epc}</p>
+          <p><strong>Dorsal:</strong> ${datos.dorsal}</p>
+          <p><strong>Dorsal Extendido:</strong> ${datos.dorsalExt}</p>
+          <p><strong>Empresa:</strong> ${datos.empresa}</p>
+          <p><strong>Carrera:</strong> ${datos.carrera}</p>
+        `;
+      }
+
+      epcInput.value = "";
+      epcInput.focus();
+    }
+
+    window.onload = function() {
+      document.getElementById("epc").focus();
+    };
+  </script>
+</body>
+</html>
