@@ -28,7 +28,7 @@ function calcularDatos(epc) {
   }
 
   try {
-    const dorsalExt = parseInt(epc.substring(4, 8), 16) + (parseInt(epc.substring(16, 18), 16) * parseInt(epc.substring(4, 8), 16));
+    const dorsalExt = parseInt(epc.substring(4, 8), 16) + (parseInt(epc.substring(16, 18), 16) * 65536);
     const dorsal = parseInt(epc.substring(4, 8), 16);
     const carrera = parseInt(epc.substring(8, 16), 16);
     const empresaCodigo = parseInt(epc.substring(0, 4), 16);
@@ -49,5 +49,5 @@ app.post("/calcular", (req, res) => {
 });
 
 // 📌 Iniciar el servidor
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
