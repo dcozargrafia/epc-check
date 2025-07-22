@@ -1,7 +1,11 @@
 version: "3"
 services:
   epc-check:
-    build: .
+    image: node:18
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: node server.js
     ports:
       - "4040:4000"
     restart: unless-stopped
