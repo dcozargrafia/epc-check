@@ -5,7 +5,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    command: node server.js
     ports:
       - "4040:4000"
+    command: sh -c "npm install && node server.js"
     restart: unless-stopped
