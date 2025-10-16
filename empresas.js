@@ -363,7 +363,18 @@ const empresas = {
     409: "Chrono Honduras",
     411: "Crono Amida",
     413: "MI Sports",
-    414: "Epic Sport"
+    414: "Epic Sport",
+    419: "runin926",
+    421: "Lost Soul",
+    422: "Timinsense USA",
+    424: "GT Sport",
+    427: "Triatlon CLM",
+    428: "BRRM",
+    429: "Manuel RunFoz",
+    430: "BACK9",
+    432: "Trifitness31",
+    433: "TS Atlas"
+    434: "Isla Bonita"
 };
   
 module.exports = empresas;
