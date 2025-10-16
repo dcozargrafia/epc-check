@@ -373,7 +373,7 @@ const empresas = {
     429: "Manuel RunFoz",
     430: "BACK9",
     432: "Trifitness31",
-    433: "TS Atlas"
+    433: "TS Atlas",
     434: "Isla Bonita"
 };
   
