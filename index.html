@@ -117,13 +117,64 @@
       font-weight: bold;
     }
 
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0 0 16px;
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .btn-info {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      line-height: 1;
+    }
+
+    .btn-info:active {
+      background: none;
+      color: #666;
+    }
+
+    .info {
+      display: none;
+      background: #f7f7f7;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .info.visible {
+      display: block;
+    }
+
     .error {
       color: #cc0000;
     }
   </style>
 </head>
 <body>
-  <h1>EPC Check</h1>
+  <div class="header">
+    <h1>EPC Check</h1>
+    <button class="btn-info" onclick="toggleInfo()">ⓘ</button>
+  </div>
+
+  <div class="info" id="info">
+    Automatically reads 20-character hex EPC codes.<br>
+    After each scan, input locks for 5 seconds to avoid duplicate reads.
+  </div>
 
   <input
     type="text"
@@ -147,6 +198,10 @@
   <script>
 
     let bloqueado = false;
+
+    function toggleInfo() {
+      document.getElementById('info').classList.toggle('visible');
+    }
     let modo = 'standard';
     let ultimosDatos = null;
 
