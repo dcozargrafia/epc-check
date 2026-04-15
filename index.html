@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EPC Check</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      padding: 24px 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      margin: 0 0 20px;
+    }
+
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 14px 12px;
+      margin: 8px 0;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #1a56db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:active {
+      background-color: #1346b8;
+    }
+
+    input:disabled {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+    }
+
+    .resultado {
+      margin-top: 24px;
+    }
+
+    .resultado p {
+      font-size: 1rem;
+      margin: 10px 0;
+      line-height: 1.4;
+    }
+
+    .resultado strong {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+    }
+
+    .code-principal {
+      text-align: center;
+      margin: 0 0 28px;
+    }
+
+    .code-principal strong {
+      font-size: 0.85rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .code-principal .valor {
+      font-size: 4rem;
+      font-weight: bold;
+      line-height: 1;
+      color: #1a56db;
+    }
+
+    .toggle {
+      display: flex;
+      margin: 16px 0 0;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #ccc;
+    }
+
+    .toggle button {
+      flex: 1;
+      margin: 0;
+      border-radius: 0;
+      border: none;
+      background: #f0f0f0;
+      color: #444;
+      font-size: 0.85rem;
+      padding: 10px;
+      font-weight: normal;
+    }
+
+    .toggle button.activo {
+      background: #1a56db;
+      color: white;
+      font-weight: bold;
+    }
+
+    .error {
+      color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <h1>EPC Check</h1>
+
+  <input
+    type="text"
+    id="epc"
+    placeholder="e.g. 000103E80000000000FF"
+    maxlength="20"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="characters"
+    spellcheck="false"
+  >
+  <button onclick="consultarEPC()">Check</button>
+
+  <div class="toggle">
+    <button id="btn-standard" class="activo" onclick="setModo('standard')">Standard</button>
+    <button id="btn-extended" onclick="setModo('extended')">Extended</button>
+  </div>
+
+  <div class="resultado" id="resultado"></div>
+
+  <script>
+
+    let bloqueado = false;
+    let modo = 'standard';
+    let ultimosDatos = null;
+
+    function setModo(nuevoModo) {
+      modo = nuevoModo;
+      document.getElementById('btn-standard').classList.toggle('activo', modo === 'standard');
+      document.getElementById('btn-extended').classList.toggle('activo', modo === 'extended');
+      if (ultimosDatos) mostrarResultado(ultimosDatos, true);
+    }
+
+    document.getElementById('epc').addEventListener('input', function () {
+      if (bloqueado) return;
+
+      const epc = this.value.toUpperCase();
+      const hexRegex = /^[0-9A-F]{20}$/;
+
+      if (hexRegex.test(epc)) {
+        consultarEPC();
+      }
+    });
+
+    function calcularDatos(epc) {
+      if (!epc || epc.length !== 20) {
+        return { error: 'Invalid EPC' };
+      }
+
+      try {
+        const dorsalExt = parseInt(epc.substring(4, 8), 16) + (parseInt(epc.substring(16, 18), 16) * 65536);
+        const dorsal = parseInt(epc.substring(4, 8), 16);
+        const carrera = parseInt(epc.substring(8, 16), 16);
+        const empresa = parseInt(epc.substring(0, 4), 16);
+
+        return { epc, dorsalExt, dorsal, empresa, carrera };
+      } catch (error) {
+        return { error: error.message };
+      }
+    }
+
+    function consultarEPC() {
+      const epcInput = document.getElementById('epc');
+      const epc = epcInput.value.toUpperCase();
+
+      if (!epc.trim()) {
+        alert('Please enter a valid EPC');
+        epcInput.focus();
+        return;
+      }
+
+      const datos = calcularDatos(epc);
+      mostrarResultado(datos);
+    }
+
+    function bloquearInput() {
+      const epcInput = document.getElementById('epc');
+      bloqueado = true;
+      epcInput.disabled = true;
+      epcInput.placeholder = 'Locked...';
+
+      setTimeout(() => {
+        bloqueado = false;
+        epcInput.disabled = false;
+        epcInput.placeholder = 'e.g. 000103E80000000000FF';
+        epcInput.focus();
+      }, 5000);
+    }
+
+    function mostrarResultado(datos, soloActualizar = false) {
+      const div = document.getElementById('resultado');
+      const epcInput = document.getElementById('epc');
+
+      if (datos.error) {
+        div.innerHTML = `<p class="error">${datos.error}</p>`;
+      } else {
+        ultimosDatos = datos;
+        const esExtended = modo === 'extended';
+        const labelPrincipal = esExtended ? 'Code with Extended Sequencing' : 'Code';
+        const valorPrincipal = esExtended ? datos.dorsalExt : datos.dorsal;
+
+        div.innerHTML = `
+          <div class="code-principal">
+            <strong>${labelPrincipal}</strong>
+            <span class="valor">${valorPrincipal}</span>
+          </div>
+          <p><strong>${esExtended ? 'Code' : 'Extended Code'}</strong>${esExtended ? datos.dorsal : datos.dorsalExt}</p>
+          <p><strong>Company Code</strong>${datos.empresa}</p>
+          <p><strong>Race Code</strong>${datos.carrera}</p>
+          <p><strong>EPC</strong>${datos.epc}</p>
+        `;
+      }
+
+      if (!soloActualizar) {
+        epcInput.value = '';
+        bloquearInput();
+      }
+    }
+
+    window.onload = function () {
+      document.getElementById('epc').focus();
+    };
+  </script>
+</body>
+</html>
