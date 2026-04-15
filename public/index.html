@@ -10,50 +10,74 @@
     input, button { width: 100%; padding: 10px; margin: 5px 0; }
     button { background-color: blue; color: white; border: none; cursor: pointer; }
     .resultado { margin-top: 20px; }
+    input:disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <h3>Check EPC</h3>
 
-  <input type="text" id="epc" placeholder="Ingrese EPC" maxlength="20" autocomplete="off">
-  <button onclick="consultarEPC()">Consultar</button>
+  <input type="text" id="epc" placeholder="e.g. 000103E80000000000FF" maxlength="20" autocomplete="off">
+  <button onclick="consultarEPC()">Check</button>
   <div class="resultado" id="resultado"></div>
 
   <script>
 
-    const API_URL = window.location.origin + "/calcular";
+    let bloqueado = false;
 
     document.getElementById("epc").addEventListener("input", function () {
+      if (bloqueado) return;
+
       const epc = this.value.toUpperCase();
-      const hexRegex = /^[0-9A-F]{20}$/; 
+      const hexRegex = /^[0-9A-F]{20}$/;
 
       if (hexRegex.test(epc)) {
         consultarEPC();
       }
     });
 
-    async function consultarEPC() {
+    function calcularDatos(epc) {
+      if (!epc || epc.length !== 20) {
+        return { error: "EPC inválido" };
+      }
+
+      try {
+        const dorsalExt = parseInt(epc.substring(4, 8), 16) + (parseInt(epc.substring(16, 18), 16) * 65536);
+        const dorsal = parseInt(epc.substring(4, 8), 16);
+        const carrera = parseInt(epc.substring(8, 16), 16);
+        const empresa = parseInt(epc.substring(0, 4), 16);
+
+        return { epc, dorsalExt, dorsal, empresa, carrera };
+      } catch (error) {
+        return { error: error.message };
+      }
+    }
+
+    function consultarEPC() {
       const epcInput = document.getElementById("epc");
       const epc = epcInput.value.toUpperCase();
 
       if (!epc.trim()) {
-        alert("Por favor, ingrese un EPC");
+        alert("Please enter a valid EPC");
         epcInput.focus();
         return;
       }
 
-      try {
-        const response = await fetch(`${API_URL}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ epc })
-        });
+      const datos = calcularDatos(epc);
+      mostrarResultado(datos);
+    }
 
-        const datos = await response.json();
-        mostrarResultado(datos);
-      } catch (error) {
-        console.error("Error:", error);
-      }
+    function bloquearInput() {
+      const epcInput = document.getElementById("epc");
+      bloqueado = true;
+      epcInput.disabled = true;
+      epcInput.placeholder = "Locked...";
+
+      setTimeout(() => {
+        bloqueado = false;
+        epcInput.disabled = false;
+        epcInput.placeholder = "e.g. 000103E80000000000FF";
+        epcInput.focus();
+      }, 5000);
     }
 
     function mostrarResultado(datos) {
@@ -65,15 +89,15 @@
       } else {
         div.innerHTML = `
           <p><strong>EPC:</strong> ${datos.epc}</p>
-          <p><strong>Dorsal:</strong> ${datos.dorsal}</p>
-          <p><strong>Dorsal Extendido:</strong> ${datos.dorsalExt}</p>
-          <p><strong>Empresa:</strong> ${datos.empresa}</p>
-          <p><strong>Carrera:</strong> ${datos.carrera}</p>
+          <p><strong>Code:</strong> ${datos.dorsal}</p>
+          <p><strong>Code with Extended Sequencing:</strong> ${datos.dorsalExt}</p>
+          <p><strong>Company Code:</strong> ${datos.empresa}</p>
+          <p><strong>Race Code:</strong> ${datos.carrera}</p>
         `;
       }
 
       epcInput.value = "";
-      epcInput.focus();
+      bloquearInput();
     }
 
     window.onload = function() {
