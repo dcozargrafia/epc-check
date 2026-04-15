@@ -160,6 +160,37 @@
       display: block;
     }
 
+    .contadores {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0 0;
+    }
+
+    .contador {
+      flex: 1;
+      background: #f7f7f7;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .contador .num {
+      display: block;
+      font-size: 1.75rem;
+      font-weight: bold;
+      color: #1a56db;
+      line-height: 1;
+    }
+
+    .contador .label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
     .error {
       color: #cc0000;
     }
@@ -193,11 +224,43 @@
     <button id="btn-extended" onclick="setModo('extended')">Extended</button>
   </div>
 
+  <div class="contadores">
+    <div class="contador">
+      <span class="num" id="cnt-sesion">0</span>
+      <span class="label">This session</span>
+    </div>
+    <div class="contador">
+      <span class="num" id="cnt-dia">0</span>
+      <span class="label">Today</span>
+    </div>
+  </div>
+
   <div class="resultado" id="resultado"></div>
 
   <script>
 
     let bloqueado = false;
+    let contadorSesion = 0;
+
+    function getFechaHoy() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getContadorDia() {
+      const datos = JSON.parse(localStorage.getItem('epc-contador') || '{}');
+      return datos.fecha === getFechaHoy() ? datos.count : 0;
+    }
+
+    function incrementarContadores() {
+      contadorSesion++;
+      document.getElementById('cnt-sesion').textContent = contadorSesion;
+
+      const hoy = getFechaHoy();
+      const datos = JSON.parse(localStorage.getItem('epc-contador') || '{}');
+      const countDia = datos.fecha === hoy ? datos.count + 1 : 1;
+      localStorage.setItem('epc-contador', JSON.stringify({ fecha: hoy, count: countDia }));
+      document.getElementById('cnt-dia').textContent = countDia;
+    }
 
     function toggleInfo() {
       document.getElementById('info').classList.toggle('visible');
@@ -293,12 +356,14 @@
       }
 
       if (!soloActualizar) {
+        incrementarContadores();
         epcInput.value = '';
         bloquearInput();
       }
     }
 
     window.onload = function () {
+      document.getElementById('cnt-dia').textContent = getContadorDia();
       document.getElementById('epc').focus();
     };
   </script>
