@@ -52,6 +52,20 @@
       cursor: not-allowed;
     }
 
+    #btn-read {
+      background-color: #16a34a;
+      font-size: 1.1rem;
+      padding: 18px 12px;
+    }
+
+    #btn-read:active {
+      background-color: #15803d;
+    }
+
+    #btn-read.esperando {
+      background-color: #ca8a04;
+    }
+
     .resultado {
       margin-top: 24px;
     }
@@ -203,21 +217,21 @@
   </div>
 
   <div class="info" id="info">
-    Automatically reads 20-character hex EPC codes.<br>
-    After each scan, input locks for 5 seconds to avoid duplicate reads.
+    Tap <strong>Read</strong> to activate scanning. The app reads the next valid 20-character hex EPC and locks automatically until you tap Read again.
   </div>
 
   <input
     type="text"
     id="epc"
-    placeholder="e.g. 000103E80000000000FF"
+    placeholder="Tap Read to scan"
     maxlength="20"
     autocomplete="off"
     autocorrect="off"
     autocapitalize="characters"
     spellcheck="false"
+    disabled
   >
-  <button onclick="consultarEPC()">Check</button>
+  <button id="btn-read" onclick="activarLectura()">Read</button>
 
   <div class="toggle">
     <button id="btn-standard" class="activo" onclick="setModo('standard')">Standard</button>
@@ -239,7 +253,7 @@
 
   <script>
 
-    let bloqueado = false;
+    let esperandoLectura = false;
     let contadorSesion = 0;
 
     function getFechaHoy() {
@@ -275,8 +289,33 @@
       if (ultimosDatos) mostrarResultado(ultimosDatos, true);
     }
 
+    function activarLectura() {
+      const epcInput = document.getElementById('epc');
+      const btnRead = document.getElementById('btn-read');
+      esperandoLectura = true;
+      epcInput.disabled = false;
+      epcInput.value = '';
+      epcInput.placeholder = 'Scanning...';
+      btnRead.classList.add('esperando');
+      btnRead.textContent = 'Stop Scanning';
+      btnRead.onclick = bloquearLectura;
+      epcInput.focus();
+    }
+
+    function bloquearLectura() {
+      const epcInput = document.getElementById('epc');
+      const btnRead = document.getElementById('btn-read');
+      esperandoLectura = false;
+      epcInput.disabled = true;
+      epcInput.value = '';
+      epcInput.placeholder = 'Tap Read to scan';
+      btnRead.classList.remove('esperando');
+      btnRead.textContent = 'Read';
+      btnRead.onclick = activarLectura;
+    }
+
     document.getElementById('epc').addEventListener('input', function () {
-      if (bloqueado) return;
+      if (!esperandoLectura) return;
 
       const epc = this.value.toUpperCase();
       const hexRegex = /^[0-9A-F]{20}$/;
@@ -306,29 +345,9 @@
     function consultarEPC() {
       const epcInput = document.getElementById('epc');
       const epc = epcInput.value.toUpperCase();
-
-      if (!epc.trim()) {
-        alert('Please enter a valid EPC');
-        epcInput.focus();
-        return;
-      }
-
       const datos = calcularDatos(epc);
+      bloquearLectura();
       mostrarResultado(datos);
-    }
-
-    function bloquearInput() {
-      const epcInput = document.getElementById('epc');
-      bloqueado = true;
-      epcInput.disabled = true;
-      epcInput.placeholder = 'Locked...';
-
-      setTimeout(() => {
-        bloqueado = false;
-        epcInput.disabled = false;
-        epcInput.placeholder = 'e.g. 000103E80000000000FF';
-        epcInput.focus();
-      }, 5000);
     }
 
     function mostrarResultado(datos, soloActualizar = false) {
@@ -357,14 +376,11 @@
 
       if (!soloActualizar) {
         incrementarContadores();
-        epcInput.value = '';
-        bloquearInput();
       }
     }
 
     window.onload = function () {
       document.getElementById('cnt-dia').textContent = getContadorDia();
-      document.getElementById('epc').focus();
     };
   </script>
 </body>
